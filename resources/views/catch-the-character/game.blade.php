@@ -2,15 +2,29 @@
 
 @section('styles')
 <style>
+    body {
+        overflow: hidden !important;
+    }
+
+    .container {
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        height: 100vh !important;
+    }
+
     .game-container {
         background: white;
-        border-radius: 15px;
+        border-radius: 0;
         overflow: hidden;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        box-shadow: none;
         display: flex;
         flex-direction: column;
-        height: calc(100vh - 200px);
-        max-height: 800px;
+        height: 100vh;
+        width: 100vw;
+        position: fixed;
+        top: 0;
+        left: 0;
     }
 
     .game-header {
@@ -22,6 +36,8 @@
         align-items: center;
         flex-wrap: wrap;
         gap: 15px;
+        flex-shrink: 0;
+        min-height: 120px;
     }
 
     .game-header h2 {
@@ -355,67 +371,121 @@
     }
 
     // Renderizar caracteres en el tablero
-    function renderCharacters() {
-        elements.gameBoard.innerHTML = '';
+    // Variables globales para el sistema de columnas
+    let columnTimers = {};
+    const cardWidth = 100;
+    const spacing = 15;
+    let maxColumns = 4;
 
-        // Calcular grid de columnas (máx 4 caracteres por fila)
-        const cardWidth = 100;
-        const spacing = 15;
+    // Calcular número de columnas
+    function calculateColumns() {
         const boardWidth = elements.gameBoard.offsetWidth;
-        const maxColumns = Math.max(1, Math.floor((boardWidth - spacing) / (cardWidth + spacing)));
+        maxColumns = Math.max(1, Math.floor((boardWidth - spacing) / (cardWidth + spacing)));
+    }
+
+    // Crear un único carácter cayendo
+    function createFallingCharacter(character, columnIndex) {
+        const card = document.createElement('div');
+        card.className = 'character-card';
+        card.innerHTML = `
+            <div class="hanzi">${character.hanzi}</div>
+            <div class="pinyin">${character.pinyin}</div>
+        `;
+
+        // Posición horizontal fija por columna
+        const boardWidth = elements.gameBoard.offsetWidth;
+        const leftPosition = (boardWidth / maxColumns) * columnIndex + spacing;
         
-        gameState.characters.forEach((char, index) => {
-            const card = document.createElement('div');
-            card.className = 'character-card';
-            card.innerHTML = `
-                <div class="hanzi">${char.hanzi}</div>
-                <div class="pinyin">${char.pinyin}</div>
-            `;
+        // Tiempo de caída: 5-6 segundos (suave)
+        const fallTime = 5000 + Math.random() * 1000;
+        const startTime = Date.now();
+        
+        const topStart = -100;
+        const topEnd = elements.gameBoard.offsetHeight;
 
-            // Calcular posición horizontal fija basada en índice
-            const column = index % maxColumns;
-            const row = Math.floor(index / maxColumns);
-            const leftPosition = (boardWidth / maxColumns) * column + spacing;
-            
-            // Tiempo de caída: 4-5 segundos (más suave que antes)
-            const fallTime = 4000 + (index * 200); // Efecto cascada
-            const startTime = Date.now() + (index * 100); // Delay progresivo
-            
-            const topStart = -100;
-            const topEnd = elements.gameBoard.offsetHeight;
+        function animate() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(1, elapsed / fallTime);
 
-            function animate() {
-                const elapsed = Date.now() - startTime;
-                
-                // Aún no empieza
-                if (elapsed < 0) {
-                    requestAnimationFrame(animate);
-                    return;
+            if (progress >= 1) {
+                // Carácter llegó al fondo
+                card.remove();
+                if (character.is_correct) {
+                    handleMissedCharacter();
                 }
-                
-                const progress = Math.min(1, elapsed / fallTime);
-
-                if (progress >= 1) {
-                    // Carácter llegó al fondo
-                    card.remove();
-                    if (char.is_correct) {
-                        handleMissedCharacter();
-                    }
-                    return;
-                }
-
-                // Solo animar vertical (TOP), horizontal es fijo
-                const top = topStart + (topEnd - topStart) * progress;
-                card.style.top = top + 'px';
-                card.style.left = leftPosition + 'px';
-
-                requestAnimationFrame(animate);
+                return;
             }
 
-            card.onclick = () => handleCharacterClick(char, card);
-            elements.gameBoard.appendChild(card);
-            animate();
-        });
+            // Solo animar vertical (TOP), horizontal es fijo
+            const top = topStart + (topEnd - topStart) * progress;
+            card.style.top = top + 'px';
+            card.style.left = leftPosition + 'px';
+
+            requestAnimationFrame(animate);
+        }
+
+        card.onclick = () => handleCharacterClick(character, card);
+        elements.gameBoard.appendChild(card);
+        animate();
+    }
+
+    // Generar caracteres esporádicamente en columnas
+    function startColumnGenerators() {
+        calculateColumns();
+        
+        // Para cada columna, crear un generador independiente
+        for (let col = 0; col < maxColumns; col++) {
+            scheduleNextCharacter(col);
+        }
+    }
+
+    // Programar el siguiente carácter en una columna específica
+    async function scheduleNextCharacter(columnIndex) {
+        if (!gameState.isGameActive) return;
+
+        // Intervalo aleatorio: 1.5 a 3.5 segundos
+        const delay = 1500 + Math.random() * 2000;
+
+        // Limpiar timer anterior si existe
+        if (columnTimers[columnIndex]) {
+            clearTimeout(columnTimers[columnIndex]);
+        }
+
+        // Programar el siguiente carácter
+        columnTimers[columnIndex] = setTimeout(async () => {
+            if (!gameState.isGameActive) return;
+
+            try {
+                const response = await fetch('/catch-the-character/api/' + gameState.themeId + '/characters', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    },
+                    body: JSON.stringify({
+                        level: gameState.level,
+                    }),
+                });
+
+                const data = await response.json();
+                if (data.success && data.characters.length > 0) {
+                    // Tomar un carácter aleatorio del lote
+                    const randomChar = data.characters[Math.floor(Math.random() * data.characters.length)];
+                    createFallingCharacter(randomChar, columnIndex);
+                }
+            } catch (error) {
+                console.error('Error generando carácter:', error);
+            }
+
+            // Programar el siguiente
+            scheduleNextCharacter(columnIndex);
+        }, delay);
+    }
+
+    // Renderizar caracteres (función simplificada)
+    function renderCharacters() {
+        // Esta función ahora solo limpia el board en inicialización
+        elements.gameBoard.innerHTML = '';
     }
 
     // Manejar clic en carácter
@@ -516,6 +586,9 @@
         gameState.isGameActive = true;
         gameState.timeRemaining = gameState.duration;
 
+        // Iniciar generadores de columnas
+        startColumnGenerators();
+
         // Temporizador
         const timerInterval = setInterval(() => {
             gameState.timeRemaining--;
@@ -526,41 +599,13 @@
 
             if (gameState.timeRemaining <= 0) {
                 clearInterval(timerInterval);
-                clearInterval(generatorInterval);
+                
+                // Limpiar todos los timers de columnas
+                Object.values(columnTimers).forEach(timer => clearTimeout(timer));
+                
                 endGame();
             }
         }, 1000);
-
-        // Generar caracteres continuamente cada 2.5 segundos
-        const generatorInterval = setInterval(() => {
-            if (gameState.isGameActive) {
-                generateNewRound();
-            }
-        }, 2500);
-    }
-
-    // Generar nuevo lote de caracteres
-    async function generateNewRound() {
-        try {
-            const response = await fetch('/catch-the-character/api/' + gameState.themeId + '/characters', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-                },
-                body: JSON.stringify({
-                    level: gameState.level,
-                }),
-            });
-
-            const data = await response.json();
-            if (data.success) {
-                gameState.characters = data.characters;
-                renderCharacters();
-            }
-        } catch (error) {
-            console.error('Error generando nuevo lote:', error);
-        }
     }
 
     // Finalizar juego
