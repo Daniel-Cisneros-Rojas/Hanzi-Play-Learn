@@ -93,7 +93,7 @@
         position: absolute; top: 6px; left: 8px; font-size: 0.7rem; font-weight: 700;
         color: rgba(255,255,255,0.3);
     }
-    .stroke-card svg { width: 110px; height: 110px; }
+    .stroke-card svg { width: 110px; height: 110px; transform: scaleY(-1); }
     .stroke-card svg .stroke-outline { fill: none; stroke: rgba(255,255,255,0.12); stroke-width: 80; stroke-linecap: round; stroke-linejoin: round; }
     .stroke-card svg .stroke-prev { fill: none; stroke: rgba(255,255,255,0.4); stroke-width: 80; stroke-linecap: round; stroke-linejoin: round; }
     .stroke-card svg .stroke-current { fill: none; stroke: rgba(255,255,255,0.9); stroke-width: 80; stroke-linecap: round; stroke-linejoin: round; }
@@ -103,6 +103,14 @@
 
     .stroke-card.pos-correct { border-color: #34d399; background: rgba(52,211,153,0.08); }
     .stroke-card.pos-wrong { border-color: #f87171; background: rgba(248,113,113,0.08); }
+
+    .stroke-card.locked {
+        border-color: #34d399; background: rgba(52,211,153,0.1);
+        cursor: default; opacity: 0.7; pointer-events: none;
+    }
+    .stroke-card.locked::after {
+        content: '🔒'; position: absolute; top: 4px; right: 6px; font-size: 0.65rem;
+    }
 
     .actions { display: flex; gap: 12px; justify-content: center; }
     .actions button {
@@ -458,6 +466,7 @@
     let touchSource = null;
 
     function onDragStart(e) {
+        if (this.classList.contains('locked')) { e.preventDefault(); return; }
         dragSrcEl = this;
         this.classList.add('dragging');
         clearPositionFeedback();
@@ -479,7 +488,7 @@
     function onDrop(e) {
         e.preventDefault();
         this.classList.remove('drag-target');
-        if (dragSrcEl === this) return;
+        if (dragSrcEl === this || this.classList.contains('locked') || dragSrcEl.classList.contains('locked')) return;
 
         const grid = dom.strokesGrid;
         const allCards = [...grid.children];
@@ -496,6 +505,7 @@
 
     function onTouchStart(e) {
         if (e.touches.length !== 1) return;
+        if (this.classList.contains('locked')) return;
         e.preventDefault();
         clearPositionFeedback();
         touchSource = this;
@@ -550,7 +560,7 @@
             }
         });
 
-        if (dropTarget) {
+        if (dropTarget && !dropTarget.classList.contains('locked') && !touchSource.classList.contains('locked')) {
             const grid = dom.strokesGrid;
             const allCards = [...grid.children];
             const fromIdx = allCards.indexOf(touchSource);
@@ -656,6 +666,7 @@
     function showPositionFeedback() {
         const userOrder = getUserOrder();
         dom.strokesGrid.querySelectorAll('.stroke-card').forEach((card, i) => {
+            if (card.classList.contains('locked')) return;
             card.classList.remove('pos-correct', 'pos-wrong');
             if (userOrder[i] === state.correctOrder[i]) {
                 card.classList.add('pos-correct');
@@ -730,7 +741,13 @@
             updateHUD();
 
             setTimeout(() => {
-                cards.forEach(c => { c.classList.remove('wrong', 'correct'); });
+                cards.forEach((card, i) => {
+                    card.classList.remove('wrong', 'correct');
+                    if (userOrder[i] === state.correctOrder[i]) {
+                        card.classList.add('locked');
+                        card.draggable = false;
+                    }
+                });
                 showPositionFeedback();
                 checking = false;
                 dom.btnCheck.disabled = false;
