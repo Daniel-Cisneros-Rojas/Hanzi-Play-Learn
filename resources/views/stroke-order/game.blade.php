@@ -48,23 +48,32 @@
     .exit-chip:hover { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); color: #f87171; }
 
     .board {
-        flex: 1; display: flex; flex-direction: column; align-items: center;
-        justify-content: center; padding: 24px; overflow: auto; gap: 24px;
+        flex: 1; display: flex; flex-direction: row; align-items: stretch;
+        justify-content: center; padding: 20px 24px; overflow: auto; gap: 24px;
     }
 
-    .char-preview {
-        display: flex; flex-direction: column; align-items: center; gap: 6px;
+    .preview-panel {
+        flex: 0 0 40%; max-width: 400px; min-width: 220px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+        background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 20px; padding: 28px 20px;
     }
-    .char-preview .hanzi {
-        font-size: 3.5rem; font-weight: 800; color: #fff;
-        text-shadow: 0 0 20px {{ $theme->color_primary }}66;
+    .preview-panel .hanzi-label {
+        font-size: 0.7rem; color: rgba(255,255,255,0.35); text-transform: uppercase;
+        letter-spacing: 0.1em; font-weight: 600;
+    }
+    .char-anim-wrap {
+        width: 180px; height: 180px; position: relative;
+        border-radius: 16px; overflow: hidden;
+        background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
     }
     .char-preview .pinyin {
-        font-size: 1rem; color: rgba(255,255,255,0.5);
+        font-size: 1.1rem; color: rgba(255,255,255,0.5);
     }
 
-    .strokes-area {
-        display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; max-width: 600px;
+    .strokes-panel {
+        flex: 1 1 55%; min-width: 0;
+        display: flex; flex-direction: column; align-items: center; gap: 12px;
     }
     .strokes-label {
         font-size: 0.8rem; color: rgba(255,255,255,0.4); text-transform: uppercase;
@@ -74,7 +83,7 @@
         display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
         min-height: 120px; padding: 16px; border-radius: 16px;
         background: rgba(255,255,255,0.03); border: 2px dashed rgba(255,255,255,0.08);
-        transition: border-color 0.3s;
+        transition: border-color 0.3s; flex: 1; align-content: flex-start;
     }
     .strokes-grid.drag-over { border-color: {{ $theme->color_primary }}; }
 
@@ -94,9 +103,9 @@
         color: rgba(255,255,255,0.3);
     }
     .stroke-card svg { width: 110px; height: 110px; transform: scaleY(-1); }
-    .stroke-card svg .stroke-outline { fill: none; stroke: rgba(255,255,255,0.12); stroke-width: 80; stroke-linecap: round; stroke-linejoin: round; }
-    .stroke-card svg .stroke-prev { fill: none; stroke: rgba(255,255,255,0.4); stroke-width: 80; stroke-linecap: round; stroke-linejoin: round; }
-    .stroke-card svg .stroke-current { fill: none; stroke: rgba(255,255,255,0.9); stroke-width: 80; stroke-linecap: round; stroke-linejoin: round; }
+    .stroke-card svg .stroke-outline { fill: none; stroke: rgba(255,255,255,0.45); stroke-width: 80; stroke-linecap: round; stroke-linejoin: round; }
+    .stroke-card svg .stroke-prev { fill: none; stroke: rgba(255,255,255,0.8); stroke-width: 80; stroke-linecap: round; stroke-linejoin: round; }
+    .stroke-card svg .stroke-current { fill: none; stroke: #fff; stroke-width: 80; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 4px rgba(255,255,255,0.4)); }
 
     .stroke-card.correct { border-color: #34d399; background: rgba(52,211,153,0.12); }
     .stroke-card.wrong { border-color: #f87171; background: rgba(248,113,113,0.12); animation: shake 0.4s ease; }
@@ -106,13 +115,13 @@
 
     .stroke-card.locked {
         border-color: #34d399; background: rgba(52,211,153,0.1);
-        cursor: default; opacity: 0.7; pointer-events: none;
+        cursor: default; pointer-events: none;
     }
     .stroke-card.locked::after {
         content: '🔒'; position: absolute; top: 4px; right: 6px; font-size: 0.65rem;
     }
 
-    .actions { display: flex; gap: 12px; justify-content: center; }
+    .actions { display: flex; gap: 12px; justify-content: center; margin-top: auto; padding-top: 8px; }
     .actions button {
         padding: 12px 32px; border-radius: 12px; border: none;
         font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.25s;
@@ -184,7 +193,7 @@
     .modal-actions .btn-ghost { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.6); }
     .modal-actions .btn-ghost:hover { background: rgba(255,255,255,0.10); color: #fff; }
 
-    .loading-msg { color: rgba(255,255,255,0.4); font-size: 0.9rem; padding: 40px; text-align: center; }
+    .loading-msg { color: rgba(255,255,255,0.4); font-size: 0.9rem; padding: 40px; text-align: center; width: 100%; align-self: center; }
 
     .particle {
         position: fixed; width: 6px; height: 6px; border-radius: 50%;
@@ -215,10 +224,13 @@
         100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
     }
 
-    @media (max-width: 520px) {
+    @media (max-width: 700px) {
+        .board { flex-direction: column; padding: 14px; gap: 16px; }
+        .preview-panel { flex: none; max-width: none; min-width: 0; flex-direction: row; gap: 16px; padding: 16px 20px; }
+        .char-anim-wrap { width: 100px; height: 100px; flex-shrink: 0; }
+        .strokes-panel { flex: none; }
         .stroke-card { width: 100px; height: 120px; }
         .stroke-card svg { width: 78px; height: 78px; }
-        .char-preview .hanzi { font-size: 2.5rem; }
         .hud { padding: 10px 14px; }
         .stat-chip { padding: 4px 10px; font-size: 0.72rem; }
     }
@@ -258,22 +270,24 @@
     </div>
 
     <div class="board" id="board">
-        <div class="char-preview" id="charPreview" style="display:none;">
-            <span class="hanzi" id="currentHanzi"></span>
-            <span class="pinyin" id="currentPinyin"></span>
+        <div class="preview-panel" id="charPreview" style="display:none;">
+            <div class="char-anim-wrap" id="charAnimWrap"></div>
+            <div class="char-preview">
+                <span class="hanzi-label">Pinyin</span>
+                <span class="pinyin" id="currentPinyin"></span>
+            </div>
         </div>
 
-        <div class="strokes-area" id="strokesArea" style="display:none;">
+        <div class="strokes-panel" id="strokesArea" style="display:none;">
             <span class="strokes-label">Arrastra los trazos al orden correcto</span>
             <div class="strokes-grid" id="strokesGrid"></div>
+            <div class="actions" id="gameActions">
+                <button class="btn-skip" onclick="nextCharacter()">Saltar</button>
+                <button class="btn-check" id="btnCheck" onclick="checkOrder()">Verificar Orden</button>
+            </div>
         </div>
 
         <div class="loading-msg" id="loadingMsg">Cargando carácter...</div>
-
-        <div class="actions" id="gameActions" style="display:none;">
-            <button class="btn-skip" onclick="nextCharacter()">Saltar</button>
-            <button class="btn-check" id="btnCheck" onclick="checkOrder()">Verificar Orden</button>
-        </div>
     </div>
 
     <div class="footer-bar">
@@ -341,6 +355,7 @@
         active: false, ended: false, timerRef: null,
         character: null, strokeCount: 0, correctOrder: [],
         currentAttempts: 0, loading: false,
+        previewWriter: null, animTimerRef: null,
     };
 
     const $ = (id) => document.getElementById(id);
@@ -348,7 +363,7 @@
         score: $('score'), hits: $('hits'), mistakes: $('mistakes'),
         timer: $('timer'), timerFill: $('timerFill'), hint: $('hint'),
         loadingMsg: $('loadingMsg'), charPreview: $('charPreview'),
-        currentHanzi: $('currentHanzi'), currentPinyin: $('currentPinyin'),
+        currentPinyin: $('currentPinyin'),
         strokesArea: $('strokesArea'), strokesGrid: $('strokesGrid'),
         gameActions: $('gameActions'), btnCheck: $('btnCheck'),
         gameOverModal: $('gameOverModal'),
@@ -482,7 +497,7 @@
     function onDragOver(e) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
-        this.classList.add('drag-target');
+        this.classList.toggle('drag-target', dragSrcEl && !this.classList.contains('locked'));
     }
 
     function onDrop(e) {
@@ -490,16 +505,7 @@
         this.classList.remove('drag-target');
         if (dragSrcEl === this || this.classList.contains('locked') || dragSrcEl.classList.contains('locked')) return;
 
-        const grid = dom.strokesGrid;
-        const allCards = [...grid.children];
-        const fromIdx = allCards.indexOf(dragSrcEl);
-        const toIdx = allCards.indexOf(this);
-
-        if (fromIdx < toIdx) {
-            grid.insertBefore(dragSrcEl, this.nextSibling);
-        } else {
-            grid.insertBefore(dragSrcEl, this);
-        }
+        swapPositions(dragSrcEl, this);
         updateCardNumbers();
     }
 
@@ -539,7 +545,7 @@
             const r = c.getBoundingClientRect();
             const inside = touch.clientX >= r.left && touch.clientX <= r.right &&
                            touch.clientY >= r.top && touch.clientY <= r.bottom;
-            c.classList.toggle('drag-target', inside && c !== touchSource);
+            c.classList.toggle('drag-target', inside && c !== touchSource && !c.classList.contains('locked'));
         });
     }
 
@@ -561,15 +567,7 @@
         });
 
         if (dropTarget && !dropTarget.classList.contains('locked') && !touchSource.classList.contains('locked')) {
-            const grid = dom.strokesGrid;
-            const allCards = [...grid.children];
-            const fromIdx = allCards.indexOf(touchSource);
-            const toIdx = allCards.indexOf(dropTarget);
-            if (fromIdx < toIdx) {
-                grid.insertBefore(touchSource, dropTarget.nextSibling);
-            } else {
-                grid.insertBefore(touchSource, dropTarget);
-            }
+            swapPositions(touchSource, dropTarget);
             updateCardNumbers();
         }
 
@@ -577,7 +575,7 @@
     }
 
     function updateCardNumbers() {
-        dom.strokesGrid.querySelectorAll('.stroke-card').forEach((card, i) => {
+        getVisualCards().forEach((card, i) => {
             const num = card.querySelector('.stroke-num');
             if (num) num.textContent = i + 1;
         });
@@ -592,7 +590,6 @@
         dom.loadingMsg.style.display = 'block';
         dom.charPreview.style.display = 'none';
         dom.strokesArea.style.display = 'none';
-        dom.gameActions.style.display = 'none';
 
         try {
             const data = await api(CFG.routes.character, { level: CFG.level });
@@ -602,7 +599,6 @@
             }
 
             state.character = data.character;
-            dom.currentHanzi.textContent = data.character.hanzi;
             dom.currentPinyin.textContent = data.character.pinyin;
 
             let charData;
@@ -625,10 +621,27 @@
 
             renderStrokes(charData);
 
+            if (state.animTimerRef) { clearInterval(state.animTimerRef); state.animTimerRef = null; }
+            try { HanziWriter.remove && HanziWriter.remove('charAnimWrap'); } catch (_) {}
+            const wrap = dom.charPreview.querySelector('#charAnimWrap');
+            if (wrap) wrap.innerHTML = '';
+
+            state.previewWriter = HanziWriter.create('charAnimWrap', data.character.hanzi, {
+                width: 180, height: 180, padding: 10,
+                showOutline: true, showCharacter: true,
+                strokeColor: '#fff', outlineColor: 'rgba(255,255,255,0.15)',
+                strokeAnimationSpeed: 1.2, delayBetweenStrokes: 200,
+            });
+            setTimeout(() => {
+                try { state.previewWriter.animateCharacter(); } catch (_) {}
+            }, 400);
+            state.animTimerRef = setInterval(() => {
+                if (!state.ended) try { state.previewWriter.animateCharacter(); } catch (_) {}
+            }, 8000);
+
             dom.loadingMsg.style.display = 'none';
             dom.charPreview.style.display = 'flex';
             dom.strokesArea.style.display = 'flex';
-            dom.gameActions.style.display = 'flex';
             dom.btnCheck.disabled = false;
             state.loading = false;
             state.active = true;
@@ -653,22 +666,33 @@
         shuffled.forEach((origIndex, pos) => {
             const card = renderStrokeCard(pos, charData.strokes, origIndex, size, pad);
             card.dataset.correctIndex = origIndex;
+            card.style.order = pos;
             dom.strokesGrid.appendChild(card);
         });
     }
 
     let checking = false;
 
+    function swapPositions(a, b) {
+        const oa = a.style.order;
+        a.style.order = b.style.order;
+        b.style.order = oa;
+    }
+
+    function getVisualCards() {
+        return [...dom.strokesGrid.children].sort((a, b) => (parseInt(a.style.order) || 0) - (parseInt(b.style.order) || 0));
+    }
+
     function getUserOrder() {
-        return [...dom.strokesGrid.children].map(c => parseInt(c.dataset.correctIndex));
+        return getVisualCards().map(c => parseInt(c.dataset.correctIndex));
     }
 
     function showPositionFeedback() {
-        const userOrder = getUserOrder();
-        dom.strokesGrid.querySelectorAll('.stroke-card').forEach((card, i) => {
+        const visual = getVisualCards();
+        visual.forEach((card, i) => {
             if (card.classList.contains('locked')) return;
             card.classList.remove('pos-correct', 'pos-wrong');
-            if (userOrder[i] === state.correctOrder[i]) {
+            if (parseInt(card.dataset.correctIndex) === state.correctOrder[i]) {
                 card.classList.add('pos-correct');
             } else {
                 card.classList.add('pos-wrong');
@@ -687,13 +711,13 @@
         checking = true;
         dom.btnCheck.disabled = true;
 
-        const cards = [...dom.strokesGrid.children];
+        const visual = getVisualCards();
         const userOrder = getUserOrder();
         const isCorrect = userOrder.every((val, i) => val === state.correctOrder[i]);
 
         if (isCorrect) {
             soundWin();
-            cards.forEach((card, i) => {
+            visual.forEach((card, i) => {
                 setTimeout(() => {
                     card.classList.add('correct');
                     card.style.animation = 'successPulse 0.6s ease';
@@ -728,7 +752,7 @@
                 current_attempts: state.currentAttempts,
             }).catch(() => {});
 
-            cards.forEach((card, i) => {
+            visual.forEach((card, i) => {
                 if (userOrder[i] !== state.correctOrder[i]) {
                     card.classList.add('wrong');
                     const r = card.getBoundingClientRect();
@@ -741,7 +765,7 @@
             updateHUD();
 
             setTimeout(() => {
-                cards.forEach((card, i) => {
+                visual.forEach((card, i) => {
                     card.classList.remove('wrong', 'correct');
                     if (userOrder[i] === state.correctOrder[i]) {
                         card.classList.add('locked');
@@ -764,6 +788,7 @@
         dom.gameOverModal.classList.remove('visible');
         state.score = 0; state.hits = 0; state.mistakes = 0;
         state.timeLeft = CFG.duration; state.ended = false;
+        if (state.animTimerRef) { clearInterval(state.animTimerRef); state.animTimerRef = null; }
         dom.timer.textContent = CFG.duration + 's';
         dom.timerFill.style.width = '100%';
         dom.timerFill.classList.remove('warning');
@@ -777,6 +802,7 @@
         state.ended = true;
         state.active = false;
         stopTimer();
+        if (state.animTimerRef) { clearInterval(state.animTimerRef); state.animTimerRef = null; }
 
         api(CFG.routes.end, {
             theme_id: CFG.themeId,
