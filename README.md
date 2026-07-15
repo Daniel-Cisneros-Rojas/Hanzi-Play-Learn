@@ -1,4 +1,4 @@
-<p align="center"><img width="554" height="554" alt="image" src="https://github.com/user-attachments/assets/58ad7669-870c-44f8-b23f-0f3b28f06ef1" />
+<p align="center"><img width="454" height="454" alt="image" src="https://github.com/user-attachments/assets/58ad7669-870c-44f8-b23f-0f3b28f06ef1" />
 </a></p>
 
 <p align="center">
@@ -7,6 +7,7 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
+
 ## HanziPlay&Learn
 HanziPlay&Learn es una aplicación web desarrollada con Laravel 12 cuyo objetivo es facilitar el aprendizaje de caracteres chinos (Hanzi) mediante una experiencia de aprendizaje basada en la gamificación. La plataforma integra diferentes minijuegos que ayudan a reforzar el reconocimiento visual de los caracteres, su pronunciación (pinyin) y su significado, proporcionando una forma interactiva y progresiva de adquirir vocabulario en chino mandarín.
 
